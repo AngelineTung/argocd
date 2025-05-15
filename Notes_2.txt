@@ -1,0 +1,114 @@
+#changing replica count from 2 to 3 using application-1.yml instead of values.yml in GitHub
+#using parameters to override
+
+vim application-1.yml
+
+"""
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: application-from-scratch
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    helm:
+      releaseName: application-from-helm
+      parameters:                  --> will override any existing values
+        - name: "replicaCount"     --> name of the parameter to override 
+          value: "3"
+    path: helm/nginx
+    repoURL: https://github.com/AngelineTung/argocd.git
+    targetRevision: main
+~
+
+kubectl apply -f application-1.yml
+
+"""
+#Then got to argocd ui and sync it. rem, whenever sync is done, try to prune it
+
+#note, hard to override multiple values. In this situation, it is recommened to use a separate values file.
+
+#create a new file called custom-values.yml in GitHub
+
+"""
+replicaCount: 4
+
+"""
+
+#then delete the parameters block in application-1.yml and add a parameter called valueFiles
+
+"""
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: application-from-scratch
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    helm:
+      releaseName: application-from-helm
+      valueFiles:
+        - custom-values.yaml
+    path: helm/nginx
+    repoURL: https://github.com/AngelineTung/argocd.git
+    targetRevision: main
+
+
+"""
+
+kubectl apply -f application-1.yml
+
+
+# note that the application spec, in particularly the source block, defers in syntax from the one given in https://argo-cd.readthedocs.io/en/stable/user-guide/helm/
+
+"""
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sealed-secrets
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: sealed-secrets
+    repoURL: https://bitnami-labs.github.io/sealed-secrets    -> use helm repo instead of git repo
+    targetRevision: 1.16.1                                    -> version of that chart
+    helm:
+      releaseName: sealed-secrets
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kubeseal
+
+"""
+
+# let's use it to see how it works
+vim application-2.yml
+
+"""
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sealed-secrets
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: sealed-secrets
+    repoURL: https://bitnami-labs.github.io/sealed-secrets
+    targetRevision: 1.16.1
+    helm:
+      releaseName: sealed-secrets
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: default
+
+"""
+kubectl apply -f application-2.yml
+
+# if you go to argocd ui, you'll see a new application called sealed-secrets
