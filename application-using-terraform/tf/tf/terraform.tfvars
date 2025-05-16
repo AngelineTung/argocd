@@ -1,0 +1,11 @@
+username              = "admin"
+password              = "Vk8LjXmxSgOC8Cg1"
+repo_url              = "https://github.com/AngelineTung/argocd.git"
+path                  = "application-using-terraform/tf"
+target_revision       = "main"
+values_files          = ["custom-values.yaml"] # fixed key name
+destination_namespace = "terraform"
+destination_server    = "https://kubernetes.default.svc"
+server_addr           = "localhost:8080"
+insecure              = true
+namespace             = "argocd"
